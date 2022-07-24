@@ -70,7 +70,6 @@ int main() {
     cout << reply.address << endl;
     cout << reply.port << endl;
 
-    close(socket_fd);
     /*
     **connect server D
     */
@@ -100,7 +99,19 @@ int main() {
     cout << reply.type << endl;
     cout << reply.content << endl;
 
+    /*
+    **send update message for object owner to B
+    */
+    memcpy(message.type, "update", sizeof("update"));
+    memcpy(message.address, "10.0.2.15", sizeof("10.0.2.15"));
+    memcpy(message.port, "10041", sizeof("10041"));
+    write(socket_fd, (char*)&message, sizeof(Message));
+
+    read(socket_fd, buffer, sizeof(buffer));
+    cout << buffer << endl;
+
     close(socket_fd2);
+    close(socket_fd);
     
     gettimeofday(&end, NULL); // end time
     cout << "Total time: " << ((end.tv_usec - start.tv_usec) + (end.tv_sec - start.tv_sec) * 1000000) << "us" << endl;

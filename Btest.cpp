@@ -21,6 +21,7 @@ struct Message {
     char port[8];
 };
 
+
 int main() {
     string temp;
 
@@ -56,10 +57,8 @@ int main() {
     int port = ntohs(client.sin_port);
     cout << "client: [" << ip << ":" << port << "] successfully connected!" << endl;
 
-    
-    
-    char buffer[2048];
     Message message;
+    char buffer[2048];
     int size = read(fd, buffer, sizeof(buffer));
     memcpy(&message, buffer, sizeof(buffer));
     
@@ -67,9 +66,9 @@ int main() {
     cout << "type: " << message.type << endl;
     cout << "content: " << message.content << endl;
 
-    //write(fd, "welcome", 7);
     if (strcmp(message.type, "request") == 0) {
         //write(fd, "the type is request, processing...", 34);
+        //search for hash table
         int socket_fd2 = socket(AF_INET, SOCK_STREAM, 0);
         if (socket_fd2 == -1) {
             cout << "socket2 init failed!" << endl;
@@ -103,6 +102,17 @@ int main() {
 
         close(socket_fd2);
 
+    }
+
+    size = read(fd, buffer, sizeof(buffer));
+    memcpy(&message, buffer, sizeof(buffer));
+    if (strcmp(message.type, "update") == 0) {
+        cout << "update informaton for new object owner:" << endl;
+        cout << message.address  << ": " << message.port << endl;
+
+        //update hash table
+
+        write(fd, "hashtable update succcess!", sizeof("hashtable update succcess!"));
     }
 
     close(fd);
