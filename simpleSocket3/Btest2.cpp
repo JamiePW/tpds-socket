@@ -12,15 +12,16 @@ int main() {
 
     int fd = _listenSock(socket_fd);
 
+    //receive key request
     int size = read(fd, buffer, sizeof(buffer));
-    Message message;
-    memcpy(&message, buffer, sizeof(buffer));
-    cout << "bytes received: " << size << endl;
-    cout << "type: " << message.type << endl;
-    cout << "content: " << message.content << endl;
+    KeyRequest keyrequest;
+    memcpy(&keyrequest, buffer, sizeof(buffer));
+    //cout << "bytes received: " << size << endl;
+    //cout << "type: " << keyrequest.type << endl;
+    //cout << "content: " << keyrequest.target << endl;
 
-    if (strcmp(message.type, messageType[0]) == 0) {
-        string temp = message.content;
+    if (strcmp(keyrequest.type, messageType[0]) == 0) {
+        string temp = keyrequest.target;
 
         /*
         **connect to C to get new information
@@ -28,10 +29,13 @@ int main() {
         int socket_fd2 = _connectSock(localAddr, 10040);
         if (socket_fd2 == -1) exit(-1);
 
-        _sendMessage(socket_fd2, messageType[0], message.content, NULL, NULL);
+        //send key request of A to C
+        _sendMessage2(socket_fd2, messageType[0], keyrequest.target, NULL, NULL);
 
+        //receive key information from C
+        Key key;
         read(socket_fd2, buffer, sizeof(buffer));
-        memcpy(&message, buffer, sizeof(buffer));
+        memcpy(&key, buffer, sizeof(buffer));
 
         /*
         cout << "type: " << message.type << endl;
@@ -42,19 +46,23 @@ int main() {
 
         close(socket_fd2);
 
-        _sendMessage(fd, message.type, message.content, message.address, message.port);
+        //send key information to A
+        _sendMessage2(fd, key.type, NULL, key.address, key.port);
 
+        //receive update information from A
+        Update update;
         read(fd, buffer, sizeof(buffer));
-        memcpy(&message, buffer, sizeof(buffer));
+        memcpy(&update, buffer, sizeof(buffer));
 
-        if (strcmp(message.type, messageType[4]) == 0) {
+        if (strcmp(update.type, messageType[4]) == 0) {
             Addr addr;
-            memcpy(addr.address, message.address, sizeof(message.address));
-            addr.port = atoi(message.port);
+            memcpy(addr.address, update.address, sizeof(update.address));
+            addr.port = atoi(update.port);
             myMap[temp] = addr;
 
+            //send update succcess message to A
             char temp2[30] = "hashtable update succcess!";
-            _sendMessage(fd, messageType[4], temp2, NULL, NULL);
+            _sendMessage2(fd, messageType[4], temp2, NULL, NULL);
         }
     }
 

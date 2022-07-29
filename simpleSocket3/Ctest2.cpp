@@ -16,15 +16,16 @@ int main() {
 
     int fd = _listenSock(socket_fd);
 
+    //receive key request of A from B
     int size = read(fd, buffer, sizeof(buffer));
-    Message message;
-    memcpy(&message, buffer, sizeof(buffer));
+    KeyRequest keyrequest;
+    memcpy(&keyrequest, buffer, sizeof(buffer));
 
-    if (strcmp(message.type, messageType[0]) == 0 && myMap.find(message.content) != myMap.end()) {
-        char temp[] = "This a message from C";
+    if (strcmp(keyrequest.type, messageType[0]) == 0 && myMap.find(keyrequest.target) != myMap.end()) {
         char _port[8];
-        sprintf(_port, "%d", myMap[message.content].port);
-        _sendMessage(fd, messageType[2], temp, myMap[message.content].address, _port);
+        sprintf(_port, "%d", myMap[keyrequest.target].port);
+        //send key information to B
+        _sendMessage2(fd, messageType[2], NULL, myMap[keyrequest.target].address, _port);
     }
 
     close(fd);

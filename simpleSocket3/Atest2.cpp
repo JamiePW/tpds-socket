@@ -9,47 +9,52 @@ int main() {
     string temp;
     timeval start, end;
 
-    int socket_fd = _connectSock(localAddr, 10039);
-    if (socket_fd == -1) exit(-1);
-
-    cout << "enter anything to start..." << endl; //mark the start time
+    //cout << "enter anything to start..." << endl; //mark the start time
     cin >> temp;
     gettimeofday(&start, NULL); //start time
 
-    _sendMessage(socket_fd, messageType[0], target, NULL, NULL);
+    int socket_fd = _connectSock(localAddr, 10039);
+    if (socket_fd == -1) exit(-1);
 
+    //send key request
+    _sendMessage2(socket_fd, messageType[0], target, NULL, NULL);
+
+    //receive key information from B
     int size = read(socket_fd, buffer, sizeof(buffer));
-    Message message;
-    memcpy(&message, buffer, sizeof(buffer));
+    Key key;
+    memcpy(&key, buffer, sizeof(buffer));
 
-    if (strcmp(message.type, messageType[2]) == 0) {
+    if (strcmp(key.type, messageType[2]) == 0) {
         /*
-        **connect server D
+        **connect server D using key information from B
         */
-        int socket_fd2 = _connectSock(message.address, atoi(message.port));
+        int socket_fd2 = _connectSock(key.address, atoi(key.port));
         if (socket_fd2 == -1) exit(-1);
 
-        char test[20] = "I need the object";
-        _sendMessage(socket_fd2, messageType[1], test, NULL, NULL);
+        //send object request to D
+        _sendMessage2(socket_fd2, messageType[1], NULL, NULL, NULL);
 
-        Message reply;
+        //receive object information from D
+        Object object;
         read(socket_fd2, buffer, sizeof(buffer));
-        memcpy(&reply, buffer, sizeof(buffer));
+        memcpy(&object, buffer, sizeof(buffer));
 
-        cout << "type: " << reply.type << endl;
-        cout << "content: " << reply.content << endl;
+        //cout << "type: " << object.type << endl;
+        //cout << "content: " << object.content << endl;
 
         close(socket_fd2);
 
         /*
         **send update message for object owner to B
         */
-        _sendMessage(socket_fd, messageType[4], NULL, message.address, message.port);
+        _sendMessage2(socket_fd, messageType[4], NULL, key.address, key.port);
 
+        //receive update success message from B
+        Update update;
         read(socket_fd, buffer, sizeof(buffer));
-        memcpy(&reply, buffer, sizeof(buffer));
-        cout << "type: " << reply.type << endl;
-        cout << "content: " << reply.content << endl;
+        memcpy(&update, buffer, sizeof(buffer));
+        //cout << "type: " << update.type << endl;
+        //cout << "content: " << update.content << endl;
     }
 
     gettimeofday(&end, NULL); // end time

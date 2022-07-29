@@ -20,6 +20,34 @@ struct Message {
     char port[8];
 };
 
+struct KeyRequest {  //messageType[0]
+    char type[16];
+    char target[128];  //equal to "content"
+};
+
+struct ObjRequest {  //messageType[1]
+    char type[16];
+};
+
+
+struct Key {  //messageType[2]
+    char type[16];
+    char address[20];
+    char port[8];
+};
+
+struct Object {  //messageType[3]
+    char type[16];
+    char content[1030];
+};
+
+struct Update {  //messageType[4]
+    char type[16];
+    char content[30];
+    char address[20];
+    char port[8];
+};
+
 struct Addr {
     char address[20];
     int port;
@@ -54,13 +82,13 @@ int _bindSock(char *address, int port) { //bind function for server
         return -1;
     }
 
-    std::cout << "bind success!" << std::endl;
+    //std::cout << "bind success!" << std::endl;
 
     return socket_fd;
 }
 
 int _listenSock (int socket_fd) { //listen function for server
-    std::cout << "waiting for client..." << std::endl;
+    //std::cout << "waiting for client..." << std::endl;
     listen(socket_fd, 10);
 
     struct sockaddr_in client;
@@ -71,7 +99,7 @@ int _listenSock (int socket_fd) { //listen function for server
         return -1;
     }
     char *ip = inet_ntoa(client.sin_addr);
-    std::cout << "client: [" << ip << "] successfully connected!" << std::endl;
+    //std::cout << "client: [" << ip << "] successfully connected!" << std::endl;
 
     return fd;
 }
@@ -94,7 +122,7 @@ int _connectSock (char *address, int port) { //connect function for client
         return -1;
     }
 
-    std::cout << "connect success!" << std::endl;
+    //std::cout << "connect success!" << std::endl;
     return socket_fd;
 }
 
@@ -108,6 +136,69 @@ void _sendMessage(int socket_fd, char *type, char *content, char *address, char 
     int number = write(socket_fd, (char*)&message, sizeof(Message));
     if (number == -1) {
         std::cout << "write failed!" << std::endl; 
+    }
+}
+
+void _sendMessage2(int socket_fd, char *type, char *content, char *address, char *port) {  //function for sending a mesage in different types
+    if (strcmp(type, messageType[0]) == 0) {  //keyrequest
+        KeyRequest keyrequest;
+        memset(&keyrequest, 0, sizeof(KeyRequest));
+        
+        if (type != NULL) memcpy(keyrequest.type, type, strlen(type));
+        if (content != NULL) memcpy(keyrequest.target, content, strlen(content));
+
+        int number = write(socket_fd, (char *)&keyrequest, sizeof(KeyRequest));
+        if (number == -1) {
+            std::cout << "write failed!" << std::endl;
+        }
+    } else if (strcmp(type, messageType[1]) == 0) {  //objrequest
+        ObjRequest objrequest;
+        memset(&objrequest, 0, sizeof(ObjRequest));
+
+        if (type != NULL) memcpy(objrequest.type, type, strlen(type));
+
+        int number = write(socket_fd, (char *)&objrequest, sizeof(ObjRequest));
+        if (number == -1) {
+            std::cout << "write failed!" << std::endl;
+        }
+    } else if (strcmp(type, messageType[2]) == 0) {  //key
+        Key key;
+        memset(&key, 0, sizeof(Key));
+
+        if (type != NULL) memcpy(key.type, type, strlen(type));
+        if (address != NULL) memcpy(key.address, address, strlen(address));
+        if (port != NULL) memcpy(key.port, port, strlen(port));
+
+        int number = write(socket_fd, (char *)&key, sizeof(Key));
+        if (number == -1) {
+            std::cout << "write failed!" << std::endl;
+        }
+    } else if (strcmp(type, messageType[3]) == 0) {  //object
+        Object object;
+        memset(&object, 0, sizeof(Object));
+
+        if (type != NULL) memcpy(object.type, type, strlen(type));
+        if (content != NULL) memcpy(object.content, content, strlen(content));
+
+        int number = write(socket_fd, (char *)&object, sizeof(Object));
+        if (number == -1) {
+            std::cout << "write failed!" << std::endl;
+        }
+    } else if (strcmp(type, messageType[4]) == 0) {  //update
+        Update update;
+        memset(&update, 0, sizeof(Update));
+
+        if (type != NULL) memcpy(update.type, type, strlen(type));
+        if (content != NULL) memcpy(update.content, content, strlen(content));
+        if (address != NULL) memcpy(update.address, address, strlen(address));
+        if (port != NULL) memcpy(update.port, port, strlen(port));
+
+        int number = write(socket_fd, (char *)&update, sizeof(Update));
+        if (number == -1) {
+            std::cout << "write failed!" << std::endl;
+        }
+    } else {
+        std::cout << "message type error, write failed!" << std::endl;
     }
 }
 
