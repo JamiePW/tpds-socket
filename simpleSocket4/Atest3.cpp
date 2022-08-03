@@ -4,6 +4,7 @@
 using namespace std;
 
 char objBuffer[2048][1025];
+char dataBuffer[2048][513];
 
 int main() {
     string tmp;
@@ -25,26 +26,107 @@ int main() {
     size = read(socket_fd, buffer, sizeof(buffer));
     EnableBlock enableblock;
     memcpy(&enableblock, buffer, sizeof(buffer));
-    cout << "bytes received: " << size << endl;
-    cout << "type: " << enableblock.type << endl;
-    cout << "content: " << enableblock.content << endl;
+    //cout << "bytes received: " << size << endl;
+    //cout << "type: " << enableblock.type << endl;
+    //cout << "content: " << enableblock.content << endl;
 
     //send transfer request to C
     _sendMessage2(socket_fd, messageType[6], NULL, NULL, NULL);
 
     //receive and store all state objects from C
-    //for (int i=0;i<10;i++) {
+    for (int i=0;i<MAXOBJ;i++) {
         read(socket_fd, buffer, sizeof(buffer));
         Object object;
         memcpy(&object, buffer, sizeof(buffer));
-        cout << object.type << endl;
-        cout << object.content << endl;
-    //}
+        strcpy(objBuffer[i], object.content);
+        //cout << objBuffer[i] << endl;
+        write(socket_fd, "confirm!", sizeof("confirm!")); //this step is necessary, or it will be out of sync!
+    }
+
+    /*
+    for (int i=0;i<MAXOBJ;i++) {
+        if (strlen(objBuffer[i]) != 1024) {
+            cout << "message receive error!" << endl;
+            break;
+        }
+    }
+    cout << "message receive success!" << endl;
+    */
+
+    //connect and send all state objects to D
+    int socket_fd2 = _connectSock(localAddr, 10041);
+    if (socket_fd2 == -1) exit(-1);
+
+    for (int i=0;i<MAXOBJ;i++) {
+        _sendMessage2(socket_fd2, messageType[3], objBuffer[i], NULL, NULL);
+        read(socket_fd2, buffer, sizeof(buffer));
+        //cout << buffer << endl;
+    }
+
+    //receive confirm message from D
+    Update update;
+    size = read(socket_fd2, buffer, sizeof(buffer));
+    memcpy(&update, buffer, sizeof(buffer));
+    //cout << "bytes received: " << size << endl;
+    //cout << "type: " << update.type << endl;
+    //cout << "content: " << update.content << endl;
+
+    close(socket_fd2);
+    
+    //send request for data packets to C
+    _sendMessage2(socket_fd, messageType[7], NULL, NULL, NULL);
+
+    //receive all data flows from C
+    for (int i=0;i<MAXDATA;i++) {
+        read(socket_fd, buffer, sizeof(buffer));
+        Data data;
+        memcpy(&data, buffer, sizeof(buffer));
+        strcpy(dataBuffer[i], data.content);
+        //cout << dataBuffer[i] << endl;
+        write(socket_fd, "confirm!", sizeof("confirm!"));
+    }
+
+    for (int i=0;i<MAXDATA;i++) {
+        if (strlen(dataBuffer[i]) != 512) {
+            cout << "message receive error!" << endl;
+            break;
+        }
+    }
+    cout << "message receive success!" << endl;
+
+    close(socket_fd);
+
+    //connect and send update information for route table to B
+    int socket_fd3 = _connectSock(localAddr, 10039);
+    if (socket_fd3 == -1) exit(-1);
+
+    char Dport[8] = "10041";
+    _sendMessage2(socket_fd3, messageType[4], NULL, localAddr, Dport);
+
+    //receive update success message from B
+    read(socket_fd3, buffer, sizeof(buffer));
+    update;
+    memcpy(&update, buffer, sizeof(buffer));
+    cout << update.content << endl;
+
+    //send all data flows to B
+    for (int i=0;i<MAXDATA;i++) {
+        _sendMessage2(socket_fd3, messageType[8], dataBuffer[i], NULL, NULL);
+        read(socket_fd3, buffer, sizeof(buffer));
+        //cout << buffer << endl;
+    }
+
+    //receive confirm message from B
+    size = read(socket_fd3, buffer, sizeof(buffer));
+    memcpy(&update, buffer, sizeof(buffer));
+    //cout << "bytes received: " << size << endl;
+    //cout << "type: " << update.type << endl;
+    cout << "content: " << update.content << endl;
 
     gettimeofday(&end, NULL); // end time
     cout << "Total time: " << ((end.tv_usec - start.tv_usec) + (end.tv_sec - start.tv_sec) * 1000000) << "us" << endl;
 
-    close(socket_fd);
+    close(socket_fd3);
 
     return 0;
 }

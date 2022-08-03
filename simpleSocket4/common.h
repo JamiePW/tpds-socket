@@ -66,6 +66,15 @@ struct TransRequest { //messageType[6]
     char type[16];
 };
 
+struct DataRequest {  //messageType[7]
+    char type[16];
+};
+
+struct Data {  //messageType[8]
+    char type[16];
+    char content[520];
+};
+
 struct Addr {
     char address[20];
     int port;
@@ -74,8 +83,9 @@ struct Addr {
 char localAddr[16] = "10.0.2.15";
 
 const int MAXOBJ = 2000;  //amount of states to be transfered, should be smaller than 2048
+const int MAXDATA = 2000;  //amount of data flows be transfered, should be smaller than 2048
 
-char messageType[8][16] = {
+char messageType[10][16] = {
     "keyrequest",
     "objrequest",
     "key",
@@ -83,6 +93,8 @@ char messageType[8][16] = {
     "update",
     "enableblock",
     "transrequest",
+    "datarequest",
+    "data",
     "test"
 };
 
@@ -237,6 +249,27 @@ void _sendMessage2(int socket_fd, char *type, char *content, char *address, char
         if (type != NULL) memcpy(transrequest.type, type, strlen(type));
 
         int number = write(socket_fd, (char *)&transrequest, sizeof(TransRequest));
+        if (number == -1) {
+            std::cout << "write failed!" << std::endl;
+        }
+    } else if (strcmp(type, messageType[7]) == 0) {  //datarequest
+        DataRequest datarequest;
+        memset(&datarequest, 0, sizeof(DataRequest));
+
+        if (type != NULL) memcpy(datarequest.type, type, strlen(type));
+
+        int number = write(socket_fd, (char *)&datarequest, sizeof(DataRequest));
+        if (number == -1) {
+            std::cout << "write failed!" << std::endl;
+        }
+    } else if (strcmp(type, messageType[8]) == 0) {  //data
+        Data data;
+        memset(&data, 0, sizeof(Data));
+
+        if (type != NULL) memcpy(data.type, type, strlen(type));
+        if (content != NULL) memcpy(data.content, content, strlen(content));
+
+        int number = write(socket_fd, (char *)&data, sizeof(Data));
         if (number == -1) {
             std::cout << "write failed!" << std::endl;
         }
