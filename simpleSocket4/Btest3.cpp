@@ -5,7 +5,7 @@
 
 using namespace std;
 
-char dataBuffer[2048][513];
+char dataBuffer[MAXDATA][DATALEN];
 
 map<string, Addr> myMap;
 
@@ -36,9 +36,8 @@ int main () {
     //receive all data flows from A
     for (int i=0;i<MAXDATA;i++) {
         read(fd, buffer, sizeof(buffer));
-        Data data;
-        memcpy(&data, buffer, sizeof(buffer));
-        strcpy(dataBuffer[i], data.content);
+        strcpy(dataBuffer[i], buffer+16);
+        //cout << dataBuffer[i] << endl;
         write(fd, "confirm!", sizeof("confirm!"));
     }
 

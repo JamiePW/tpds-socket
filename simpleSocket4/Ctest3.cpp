@@ -6,12 +6,23 @@
 
 using namespace std;
 
-char state[2048][1025];
-char data[2048][513];
+char state[MAXOBJ][OBJLEN];
+char data[MAXDATA][DATALEN];
 
 int main() {
     int size;
     char buffer[2048];
+
+    //generate state and data beforehand
+    for (int i=0;i<MAXOBJ;i++) {
+        string tmp = strRand(OBJLEN-1);
+        strcpy(state[i], tmp.c_str());
+    }
+
+    for (int i=0;i<MAXDATA;i++) {
+        string tmp = strRand(DATALEN-1);
+        strcpy(data[i], tmp.c_str());
+    }
 
     int socket_fd = _bindSock(localAddr, 10040);
     if (socket_fd == -1) exit(-1);
@@ -42,8 +53,8 @@ int main() {
     //send all state objects to A
     if (strcmp(transrequest.type, messageType[6]) == 0) {
         for (int i=0;i<MAXOBJ;i++) {
-            string tmp = strRand(1024);  //this must be initialized inside the loop, or there will be segmentation fault!
-            strcpy(state[i], tmp.c_str());
+            //string tmp = strRand(OBJLEN-1);  //this must be initialized inside the loop, or there will be segmentation fault!
+            //strcpy(state[i], tmp.c_str());
             //cout << state[i] << endl;
             _sendMessage2(fd, messageType[3], state[i], NULL, NULL);
             read(fd, buffer, sizeof(buffer)); //this step is necessary, or it will be out of sync!
@@ -60,8 +71,8 @@ int main() {
     //send all data flows to A
     if (strcmp(datarequest.type, messageType[7]) == 0) {
         for (int i=0;i<MAXDATA;i++) {
-            string tmp = strRand(512);
-            strcpy(data[i], tmp.c_str());
+            //string tmp = strRand(DATALEN-1);
+            //strcpy(data[i], tmp.c_str());
             //cout << data[i] << endl;
             _sendMessage2(fd, messageType[8], data[i], NULL, NULL);
             read(fd, buffer, sizeof(buffer));

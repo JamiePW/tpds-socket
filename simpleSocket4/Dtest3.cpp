@@ -5,7 +5,7 @@
 
 using namespace std;
 
-char state[2048][1025];  //this must be a global variable
+char state[MAXOBJ][OBJLEN];  //this must be a global variable
 
 int main() {
     int size;
@@ -19,9 +19,7 @@ int main() {
     //receive all state objects from A
     for (int i=0;i<MAXOBJ;i++) {
         read(fd, buffer, sizeof(buffer));
-        Object object;
-        memcpy(&object, buffer, sizeof(buffer));
-        strcpy(state[i], object.content);
+        strcpy(state[i], buffer+16);
         //cout << state[i] << endl;
         write(fd, "confirm!", sizeof("confirm!"));
     }

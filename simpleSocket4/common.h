@@ -2,7 +2,7 @@
 #define _COMMON_H
 
 //simpleSocket3
-#include<stdio.h>
+#include<stdio.h> 
 #include<stdlib.h>
 #include<string.h>
 #include<sys/socket.h>
@@ -84,6 +84,8 @@ char localAddr[16] = "10.0.2.15";
 
 const int MAXOBJ = 2000;  //amount of states to be transfered, should be smaller than 2048
 const int MAXDATA = 2000;  //amount of data flows be transfered, should be smaller than 2048
+const int OBJLEN = 1025;  //length of a state object
+const int DATALEN = 513;  //length of a data flow
 
 char messageType[10][16] = {
     "keyrequest",

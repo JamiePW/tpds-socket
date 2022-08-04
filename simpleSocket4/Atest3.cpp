@@ -3,8 +3,8 @@
 
 using namespace std;
 
-char objBuffer[2048][1025];
-char dataBuffer[2048][513];
+char objBuffer[MAXOBJ][OBJLEN];
+char dataBuffer[MAXDATA][DATALEN];
 
 int main() {
     string tmp;
@@ -36,9 +36,7 @@ int main() {
     //receive and store all state objects from C
     for (int i=0;i<MAXOBJ;i++) {
         read(socket_fd, buffer, sizeof(buffer));
-        Object object;
-        memcpy(&object, buffer, sizeof(buffer));
-        strcpy(objBuffer[i], object.content);
+        strcpy(objBuffer[i], buffer+16);
         //cout << objBuffer[i] << endl;
         write(socket_fd, "confirm!", sizeof("confirm!")); //this step is necessary, or it will be out of sync!
     }
@@ -79,9 +77,7 @@ int main() {
     //receive all data flows from C
     for (int i=0;i<MAXDATA;i++) {
         read(socket_fd, buffer, sizeof(buffer));
-        Data data;
-        memcpy(&data, buffer, sizeof(buffer));
-        strcpy(dataBuffer[i], data.content);
+        strcpy(dataBuffer[i], buffer+16);
         //cout << dataBuffer[i] << endl;
         write(socket_fd, "confirm!", sizeof("confirm!"));
     }
@@ -105,7 +101,6 @@ int main() {
 
     //receive update success message from B
     read(socket_fd3, buffer, sizeof(buffer));
-    update;
     memcpy(&update, buffer, sizeof(buffer));
     cout << update.content << endl;
 
@@ -117,10 +112,11 @@ int main() {
     }
 
     //receive confirm message from B
+    usleep(100);
     size = read(socket_fd3, buffer, sizeof(buffer));
     memcpy(&update, buffer, sizeof(buffer));
-    //cout << "bytes received: " << size << endl;
-    //cout << "type: " << update.type << endl;
+    cout << "bytes received: " << size << endl;
+    cout << "type: " << update.type << endl;
     cout << "content: " << update.content << endl;
 
     gettimeofday(&end, NULL); // end time
