@@ -1,4 +1,11 @@
 # tpds-socket  
+### 2022-8-5  
+第一次实验参数：  
+MAXOBJ = 513
+MAXDATA = 1025  
+DATALEN = 513  
+OBJLEN分别设定为1k，2k，4k，8k，16k，每个程序每种情况测量5组数据
+
 ### 2022-8-4  
 对simpleSocket4代码部分细节进行了优化，内容如下：  
 1、将存储state和data的二维数组大小以宏的形式规定，便于调整  
