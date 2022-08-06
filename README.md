@@ -1,7 +1,7 @@
 # tpds-socket  
 ### 2022-8-5  
 第一次实验参数：  
-MAXOBJ = 513
+MAXOBJ = 513  
 MAXDATA = 1025  
 DATALEN = 513  
 OBJLEN分别设定为1k，2k，4k，8k，16k，每个程序每种情况测量5组数据
