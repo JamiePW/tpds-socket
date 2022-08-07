@@ -5,7 +5,7 @@ using namespace std;
 map<string, Addr> myMap;
 
 int main() {
-    char buffer[2048];
+    char buffer[32768];
 
     int socket_fd = _bindSock(localAddr, 10039);
     if (socket_fd == -1) exit(-1);

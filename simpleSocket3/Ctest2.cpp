@@ -5,7 +5,7 @@ using namespace std;
 map<string, Addr> myMap;
 
 int main() {
-    char buffer[2048];
+    char buffer[32768];
     Addr addr;
     memcpy(addr.address, localAddr, sizeof(localAddr));
     addr.port = 10041;

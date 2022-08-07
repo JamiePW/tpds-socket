@@ -5,11 +5,11 @@ using namespace std;
 char target[128] = "3f39d5c348e5b79d06e842c114e6cc571583bbf44e4b0ebfda1a01ec05745d43";
 
 int main() {
-    char buffer[2048];
+    char buffer[32768];
     string temp;
-    timeval start, end;
+    timeval start, end, start2, end2;
 
-    //cout << "enter anything to start..." << endl; //mark the start time
+    cout << "enter anything to start..." << endl; //mark the start time
     cin >> temp;
     gettimeofday(&start, NULL); //start time
 
@@ -31,16 +31,19 @@ int main() {
         int socket_fd2 = _connectSock(key.address, atoi(key.port));
         if (socket_fd2 == -1) exit(-1);
 
+        gettimeofday(&start2, NULL);
+
         //send object request to D
-        _sendMessage2(socket_fd2, messageType[1], NULL, NULL, NULL);
+        _sendMessage2(socket_fd2, messageType[1], target , NULL, NULL);
 
         //receive object information from D
         Object object;
         read(socket_fd2, buffer, sizeof(buffer));
         memcpy(&object, buffer, sizeof(buffer));
-
         //cout << "type: " << object.type << endl;
-        //cout << "content: " << object.content << endl;
+        cout << "content: " << object.content << endl;
+
+        gettimeofday(&end2, NULL);
 
         close(socket_fd2);
 
@@ -53,12 +56,13 @@ int main() {
         Update update;
         read(socket_fd, buffer, sizeof(buffer));
         memcpy(&update, buffer, sizeof(buffer));
-        //cout << "type: " << update.type << endl;
-        //cout << "content: " << update.content << endl;
+        cout << "type: " << update.type << endl;
+        cout << "content: " << update.content << endl;
     }
 
     gettimeofday(&end, NULL); // end time
     cout << "Total time: " << ((end.tv_usec - start.tv_usec) + (end.tv_sec - start.tv_sec) * 1000000) << "us" << endl;
+    cout << "Object trans time: " << ((end2.tv_usec - start2.tv_usec) + (end2.tv_sec - start2.tv_sec) * 1000000) << "us" << endl;
 
     close(socket_fd);
 

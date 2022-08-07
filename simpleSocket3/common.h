@@ -13,6 +13,15 @@
 #include<sys/time.h> 
 #include<map>
 
+#include <string>
+#include <random>
+
+using std::string;
+using std::random_device;
+using std::default_random_engine;
+
+const int OBJLEN = 16385;  //length of a state object
+
 struct Message {
     char type[16];
     char content[1030];
@@ -27,6 +36,7 @@ struct KeyRequest {  //messageType[0]
 
 struct ObjRequest {  //messageType[1]
     char type[16];
+    char target[128];  //equal to "content"
 };
 
 
@@ -38,7 +48,7 @@ struct Key {  //messageType[2]
 
 struct Object {  //messageType[3]
     char type[16];
-    char content[1030];
+    char content[OBJLEN];
 };
 
 struct Update {  //messageType[4]
@@ -54,6 +64,8 @@ struct Addr {
 };
 
 char localAddr[16] = "10.0.2.15";
+
+
 
 char messageType[6][16] = {
     "keyrequest",
@@ -156,6 +168,7 @@ void _sendMessage2(int socket_fd, char *type, char *content, char *address, char
         memset(&objrequest, 0, sizeof(ObjRequest));
 
         if (type != NULL) memcpy(objrequest.type, type, strlen(type));
+        if (content != NULL) memcpy(objrequest.target, content, strlen(content));
 
         int number = write(socket_fd, (char *)&objrequest, sizeof(ObjRequest));
         if (number == -1) {
@@ -200,6 +213,27 @@ void _sendMessage2(int socket_fd, char *type, char *content, char *address, char
     } else {
         std::cout << "message type error, write failed!" << std::endl;
     }
+}
+
+string strRand(int length) {  //function to generate random strings 
+    char tmp;
+    string buffer;
+
+    random_device rd;
+    default_random_engine random(rd());
+
+    for (int i=0;i<length;i++) {
+        tmp = random() % 36;  //0-9, A-Z, 36 kinds of chars
+        if (tmp < 10) {  //arabic number 
+            tmp += '0';
+        } else {  //capital letter
+            tmp -= 10;
+            tmp += 'A';
+        }
+        buffer += tmp;
+    }
+
+    return buffer;
 }
 
 #endif
