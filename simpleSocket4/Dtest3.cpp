@@ -9,7 +9,7 @@ char state[MAXOBJ][OBJLEN];  //this must be a global variable
 
 int main() {
     int size;
-    char buffer[2048];
+    char buffer[32768];
 
     int socket_fd = _bindSock(localAddr, 10041);
     if (socket_fd == -1) exit(-1);
@@ -25,7 +25,7 @@ int main() {
     }
 
     for (int i=0;i<MAXOBJ;i++) {
-        if (strlen(state[i]) != 1024) {
+        if (strlen(state[i]) != OBJLEN-1) {
             cout << "state trans failed!" << endl;
             cout << "length of state[" << i << "] is: " << strlen(state[i]) << endl;
             break;

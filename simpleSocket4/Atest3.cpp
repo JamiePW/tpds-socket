@@ -9,7 +9,7 @@ char dataBuffer[MAXDATA][DATALEN];
 int main() {
     string tmp;
     timeval start, end;
-    char buffer[2048];
+    char buffer[32768];
     int size;
 
     cout << "enter anything to start..." << endl; //mark the start time
@@ -41,15 +41,15 @@ int main() {
         write(socket_fd, "confirm!", sizeof("confirm!")); //this step is necessary, or it will be out of sync!
     }
 
-    /*
+    
     for (int i=0;i<MAXOBJ;i++) {
-        if (strlen(objBuffer[i]) != 1024) {
+        if (strlen(objBuffer[i]) != OBJLEN-1) {
             cout << "message receive error!" << endl;
             break;
         }
     }
     cout << "message receive success!" << endl;
-    */
+    
 
     //connect and send all state objects to D
     int socket_fd2 = _connectSock(localAddr, 10041);
@@ -83,7 +83,7 @@ int main() {
     }
 
     for (int i=0;i<MAXDATA;i++) {
-        if (strlen(dataBuffer[i]) != 512) {
+        if (strlen(dataBuffer[i]) != DATALEN-1) {
             cout << "message receive error!" << endl;
             break;
         }
@@ -112,7 +112,7 @@ int main() {
     }
 
     //receive confirm message from B
-    usleep(100);
+    //usleep(200);
     size = read(socket_fd3, buffer, sizeof(buffer));
     memcpy(&update, buffer, sizeof(buffer));
     cout << "bytes received: " << size << endl;

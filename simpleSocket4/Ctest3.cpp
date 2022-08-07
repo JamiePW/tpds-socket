@@ -11,7 +11,7 @@ char data[MAXDATA][DATALEN];
 
 int main() {
     int size;
-    char buffer[2048];
+    char buffer[32768];
 
     //generate state and data beforehand
     for (int i=0;i<MAXOBJ;i++) {

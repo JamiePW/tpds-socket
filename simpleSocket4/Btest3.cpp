@@ -11,13 +11,14 @@ map<string, Addr> myMap;
 
 int main () {
     int size;
-    char buffer[2048];
+    char buffer[32768];
 
     int socket_fd = _bindSock(localAddr, 10039);
     if (socket_fd == -1) exit(-1);
 
     int fd = _listenSock(socket_fd);
 
+    //receive route table update message from A
     size = read(fd, buffer, sizeof(buffer));
     Update update;
     memcpy(&update, buffer, sizeof(buffer));
@@ -42,7 +43,7 @@ int main () {
     }
 
     for (int i=0;i<MAXDATA;i++) {
-        if (strlen(dataBuffer[i]) != 512) {
+        if (strlen(dataBuffer[i]) != DATALEN-1) {
             cout << "data tranfer failed!" << endl;
             break;
         }
