@@ -65,8 +65,6 @@ struct Addr {
 
 char localAddr[16] = "10.0.2.15";
 
-
-
 char messageType[6][16] = {
     "keyrequest",
     "objrequest",

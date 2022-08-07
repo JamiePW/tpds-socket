@@ -41,7 +41,7 @@ int main() {
         read(socket_fd2, buffer, sizeof(buffer));
         memcpy(&object, buffer, sizeof(buffer));
         //cout << "type: " << object.type << endl;
-        cout << "content: " << object.content << endl;
+        //cout << "content: " << object.content << endl;
 
         gettimeofday(&end2, NULL);
 
@@ -56,8 +56,8 @@ int main() {
         Update update;
         read(socket_fd, buffer, sizeof(buffer));
         memcpy(&update, buffer, sizeof(buffer));
-        cout << "type: " << update.type << endl;
-        cout << "content: " << update.content << endl;
+        //cout << "type: " << update.type << endl;
+        //cout << "content: " << update.content << endl;
     }
 
     gettimeofday(&end, NULL); // end time
