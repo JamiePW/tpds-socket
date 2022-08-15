@@ -7,6 +7,7 @@
 
 #include<string>
 #include<map>
+#include<unordered_map>
 #include<vector>
 
 #include<random>
@@ -32,14 +33,14 @@ struct SFC {
     vector<NF> nfs;
 };
 
-map<string, int> _nf_metrics_local;
-map<string, int> _nf_metrics_remote;
-map<string, int> _solo_performance_local;
-map<string, int> _solo_performance_remote;
-map<string, vector<double>> _nf_prediction_parameters_local;
-map<string, vector<double>> _nf_prediction_parameters_remote;
-map<string, string> sfc_last_nf;
-map<string, string> instance_to_core;
+unordered_map<string, int> _nf_metrics_local;
+unordered_map<string, int> _nf_metrics_remote;
+unordered_map<string, int> _solo_performance_local;
+unordered_map<string, int> _solo_performance_remote;
+unordered_map<string, vector<double>> _nf_prediction_parameters_local;
+unordered_map<string, vector<double>> _nf_prediction_parameters_remote;
+unordered_map<int, int> sfc_last_nf;
+unordered_map<int, int> instance_to_core;
 
 vector<string> nfs;
 
@@ -127,26 +128,26 @@ void initMap() {
     _nf_prediction_parameters_remote["firewall"] = myVector;
     myVector.clear();
 
-    sfc_last_nf["1"] = "0";
-    sfc_last_nf["2"] = "1";
-    sfc_last_nf["3"] = "2";
-    sfc_last_nf["4"] = "0";
-    sfc_last_nf["5"] = "4";
-    sfc_last_nf["6"] = "5";
-    sfc_last_nf["7"] = "0";
-    sfc_last_nf["8"] = "7";
-    sfc_last_nf["9"] = "8";
-    sfc_last_nf["10"] = "0";
-    sfc_last_nf["11"] = "10";
-    sfc_last_nf["12"] = "11";
-    sfc_last_nf["13"] = "0";
-    sfc_last_nf["14"] = "13";
-    sfc_last_nf["15"] = "14";
-    sfc_last_nf["16"] = "0";
-    sfc_last_nf["17"] = "16";
-    sfc_last_nf["18"] = "17";
+    sfc_last_nf[1] = 0;
+    sfc_last_nf[2] = 1;
+    sfc_last_nf[3] = 2;
+    sfc_last_nf[4] = 0;
+    sfc_last_nf[5] = 4;
+    sfc_last_nf[6] = 5;
+    sfc_last_nf[7] = 0;
+    sfc_last_nf[8] = 7;
+    sfc_last_nf[9] = 8;
+    sfc_last_nf[10] = 0;
+    sfc_last_nf[11] = 10;
+    sfc_last_nf[12] = 11;
+    sfc_last_nf[13] = 0;
+    sfc_last_nf[14] = 13;
+    sfc_last_nf[15] = 14;
+    sfc_last_nf[16] = 0;
+    sfc_last_nf[17] = 16;
+    sfc_last_nf[18] = 17;
 
-    instance_to_core["0"] = "0";
+    instance_to_core[0] = 0;
 }
 
 //prediction model for single NF
@@ -171,78 +172,82 @@ double prediction (string nf, double cache, double memory, bool local1, bool loc
 //function for single prediction
 vector<double> single_prediction (vector<int> nf_distribution) {
     vector<double> nf_result;
-    vector<string> local_nf;
-    vector<string> remote_nf;
+    vector<int> local_nf;
+    unordered_map<int, bool> local_map;
+    vector<int> remote_nf;
+    unordered_map<int, bool> remote_map;
 
     for (int s=0;s<nf_distribution.size();s++) {
-        instance_to_core[to_string(s+1)] = to_string(nf_distribution[s]);
+        instance_to_core[s+1] = nf_distribution[s];
         if (nf_distribution[s] == 0) {
-            local_nf.push_back(to_string(s+1));
+            local_nf.push_back(s+1);
+            local_map[s+1] = true;
         } else {
-            remote_nf.push_back(to_string(s+1));
+            remote_nf.push_back(s+1);
+            remote_map[s+1] = true;
         }
     }
 
     for (int t=0;t<nf_distribution.size();t++) {
-        if ((instance_to_core[to_string(t+1)] == "0") && (instance_to_core[sfc_last_nf[to_string(t+1)]] == "0")) {
+        if ((instance_to_core[t+1] == 0) && (instance_to_core[sfc_last_nf[t+1]] == 0)) {
             double cache_local_tmp = 0;
             double memory_local_tmp = 0;
 
-            for (vector<string>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
-                if (find(local_nf.begin(), local_nf.end(), sfc_last_nf[*it]) == local_nf.end()) { //sfc_last_nf[*it] not in local_nf
-                    cache_local_tmp += (double) 1 / _nf_metrics_local[nfs[stoi(*it, nullptr, 10) - 1]];
-                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[stoi(*it, nullptr, 10) - 1]];
+            for (vector<int>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
+                if (local_map.find(sfc_last_nf[*it]) == local_map.end()) { //sfc_last_nf[*it] not in local_nf
+                    cache_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
+                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
                 }
             }
-            for (vector<string>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
-                if (find(remote_nf.begin(), remote_nf.end(), sfc_last_nf[*it]) == remote_nf.end()) {  //sfc_last_nf[*it] not in remote_nf
-                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[stoi(*it, nullptr, 10) - 1]];
+            for (vector<int>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
+                if (remote_map.find(sfc_last_nf[*it]) == remote_map.end()) {  //sfc_last_nf[*it] not in remote_nf
+                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
                 }
             }
             nf_result.push_back(prediction(nfs[t], cache_local_tmp, memory_local_tmp, true, true));
-        } else if ((instance_to_core[to_string(t+1)] == "0") && (instance_to_core[sfc_last_nf[to_string(t+1)]] == "1")) {
+        } else if ((instance_to_core[t+1] == 0) && (instance_to_core[sfc_last_nf[t+1]] == 1)) {
             double cache_local_tmp = 1;
             double memory_local_tmp = 0;
 
-            for (vector<string>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
-                if (find(local_nf.begin(), local_nf.end(), sfc_last_nf[*it]) == local_nf.end()) { //sfc_last_nf[*it] not in local_nf
-                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[stoi(*it, nullptr, 10) - 1]];
+            for (vector<int>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
+                if (local_map.find(sfc_last_nf[*it]) == local_map.end()) { //sfc_last_nf[*it] not in local_nf
+                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
                 }
             }
-            for (vector<string>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
-                if (find(remote_nf.begin(), remote_nf.end(), sfc_last_nf[*it]) == remote_nf.end()) {  //sfc_last_nf[*it] not in remote_nf
-                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[stoi(*it, nullptr, 10) - 1]];
+            for (vector<int>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
+                if (remote_map.find(sfc_last_nf[*it]) == remote_map.end()) {  //sfc_last_nf[*it] not in remote_nf
+                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
                 }
             }
             nf_result.push_back(prediction(nfs[t], cache_local_tmp, memory_local_tmp, false, true));
-        } else if ((instance_to_core[to_string(t+1)] == "1") && (instance_to_core[sfc_last_nf[to_string(t+1)]] == "1")) {
+        } else if ((instance_to_core[t+1] == 1) && (instance_to_core[sfc_last_nf[t+1]] == 1)) {
             double cache_remote_tmp = 0;
             double memory_remote_tmp = 0;
 
-            /*for (vector<string>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
+            /*for (vector<int>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
                 if (find(local_nf.begin(), local_nf.end(), sfc_last_nf[*it]) == local_nf.end()) { //sfc_last_nf[*it] not in local_nf
                     memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[stoi(*it, nullptr, 10) - 1]];
                 }
             }*/
-            for (vector<string>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
-                if (find(remote_nf.begin(), remote_nf.end(), sfc_last_nf[*it]) == remote_nf.end()) {  //sfc_last_nf[*it] not in remote_nf
-                    cache_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[stoi(*it, nullptr, 10) - 1]];
-                    memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[stoi(*it, nullptr, 10) - 1]];
+            for (vector<int>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
+                if (remote_map.find(sfc_last_nf[*it]) == remote_map.end()) {  //sfc_last_nf[*it] not in remote_nf
+                    cache_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[(*it)-1]];
+                    memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[(*it)-1]];
                 }
             }
             nf_result.push_back(prediction(nfs[t], cache_remote_tmp, memory_remote_tmp, false, false));
-        } else if ((instance_to_core[to_string(t+1)] == "1") && (instance_to_core[sfc_last_nf[to_string(t+1)]] == "0")) {
+        } else if ((instance_to_core[t+1] == 1) && (instance_to_core[sfc_last_nf[t+1]] == 0)) {
             double cache_remote_tmp = 1;
             double memory_remote_tmp = 0;
 
-            /*for (vector<string>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
+            /*for (vector<int>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
                 if (find(local_nf.begin(), local_nf.end(), sfc_last_nf[*it]) == local_nf.end()) {  //sfc_last_nf[*it] not in local_nf
                     memory_remote_tmp += (double) 1 /  _nf_metrics_remote[nfs[stoi(*it, nullptr, 10) - 1]];
                 }
             }*/
-            for (vector<string>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
-                if (find(remote_nf.begin(), remote_nf.end(), sfc_last_nf[*it]) == remote_nf.end()) {  //sfc_last_nf[*it] not in remote_nf
-                    memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[stoi(*it, nullptr, 10) - 1]];
+            for (vector<int>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
+                if (remote_map.find(sfc_last_nf[*it]) == remote_map.end()) {  //sfc_last_nf[*it] not in remote_nf
+                    memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[(*it)-1]];
                 }
             }
             nf_result.push_back(prediction(nfs[t], cache_remote_tmp, memory_remote_tmp, true, false));
@@ -253,13 +258,15 @@ vector<double> single_prediction (vector<int> nf_distribution) {
 
 //recursive search procedure
 void multi_prediction (vector<SFC> sfcs, int server[], vector<int> nf_distribution, vector<double> nf_result, double sfc_result, vector<int> nfs_result) {
+    //timeval start, end;
     int flag = 0;
     int i = 0;  //becareful not to use i in loops!!!
     int node0_core = 0;
     /*for (int j=0;j<nf_result.size();j++) {
         printf("%f\n", nf_result[j]);
     }*/
-    
+
+    //gettimeofday(&start, NULL);
 
     for (vector<SFC>::iterator sfc = sfcs.begin(); sfc != sfcs.end(); sfc++) {
         double sfc_min = 1000000000;
@@ -333,14 +340,16 @@ void multi_prediction (vector<SFC> sfcs, int server[], vector<int> nf_distributi
         }*/
         multi_prediction(sfcs, server, distribution_tmp, nf_result_tmp, sfc_result, nfs_result);
     } else {
+        //gettimeofday(&end, NULL);
+        //cout << "multi_prediction time: " << ((end.tv_usec - start.tv_usec) + (end.tv_sec - start.tv_sec) * 1000000) << "us" << endl;
         return;
     }
 }
 
 //heuristic placement algorithm
 map<double, vector<int>> prediction_search (vector<string> nfs) {
-    //timeval start1, start2, end;
-    //gettimeofday(&start1, NULL);
+    timeval start1, start2, end;
+    gettimeofday(&start1, NULL);
 
     vector<SFC> sfcs;
     for (int sfc_id=0; sfc_id<6; sfc_id++) {
@@ -410,7 +419,7 @@ map<double, vector<int>> prediction_search (vector<string> nfs) {
     vector<int> nfs_result;
     nfs_result.insert(nfs_result.begin(), nf_number, 0);
 
-    //gettimeofday(&start2, NULL);
+    gettimeofday(&start2, NULL);
 
     for (int i=0;i<sfc_choice;i++) {
         int k = 0;
@@ -452,9 +461,9 @@ map<double, vector<int>> prediction_search (vector<string> nfs) {
         }
     }
 
-    //gettimeofday(&end, NULL);
-    //cout << "sfc search1 run time is : " << ((end.tv_usec - start1.tv_usec) + (end.tv_sec - start1.tv_sec) * 1000000) << "us" << endl;
-    //cout << "sfc search2 run time is : " << ((end.tv_usec - start2.tv_usec) + (end.tv_sec - start2.tv_sec) * 1000000)  << "us" << endl;
+    gettimeofday(&end, NULL);
+    cout << "sfc search1 run time is : " << ((end.tv_usec - start1.tv_usec) + (end.tv_sec - start1.tv_sec) * 1000000) << "us" << endl;
+    cout << "sfc search2 run time is : " << ((end.tv_usec - start2.tv_usec) + (end.tv_sec - start2.tv_sec) * 1000000)  << "us" << endl;
     map<double, vector<int>> myMap;
     myMap[sfc_result] = nfs_result;
     return myMap;
@@ -462,7 +471,7 @@ map<double, vector<int>> prediction_search (vector<string> nfs) {
 
 //greedy placement algorithm
 map<double, vector<int>> prediction_placement (vector<string> nfs) {
-    timeval start1, start2, end;
+    timeval start1, start2, end, end2;
     gettimeofday(&start1, NULL);
 
     int server[2];
@@ -491,7 +500,10 @@ map<double, vector<int>> prediction_placement (vector<string> nfs) {
         }
         if ((nf_number - mySum(distribution)) < server[0] && mySum(distribution) < server[1]) {
             //print distribution
+            //gettimeofday(&start2, NULL);
             vector<double> nf_result = single_prediction(distribution);
+            //gettimeofday(&end2, NULL);
+            //cout << "single_prediction time: " << ((end2.tv_usec - start2.tv_usec) + (end2.tv_sec - start2.tv_sec) * 1000000)  << "us" << endl;
             //print distribution
             //print nf_result
             //sfc special
@@ -508,8 +520,8 @@ map<double, vector<int>> prediction_placement (vector<string> nfs) {
     }
 
     gettimeofday(&end, NULL);
-    //cout << "nf search1 run time is : " << ((end.tv_usec - start1.tv_usec) + (end.tv_sec - start1.tv_sec) * 1000000) << "us" << endl;
-    //cout << "nf search2 run time is : " << ((end.tv_usec - start2.tv_usec) + (end.tv_sec - start2.tv_sec) * 1000000)  << "us" << endl;
+    cout << "nf search1 run time is : " << ((end.tv_usec - start1.tv_usec) + (end.tv_sec - start1.tv_sec) * 1000000) << "us" << endl;
+    cout << "nf search2 run time is : " << ((end.tv_usec - start2.tv_usec) + (end.tv_sec - start2.tv_sec) * 1000000)  << "us" << endl;
     map<double, vector<int>> myMap;
     myMap[sfc_result] = nfs_result;
     return myMap;
@@ -552,14 +564,14 @@ int main() {
         } else {
             miss_number += 1;
             miss_loss += (b->first - a->first) / b->first;
-            printf("result_search: %f\n", a->first);
-            printf("result_placement: %f\n", b->first);
+            //printf("result_search: %f\n", a->first);
+            //printf("result_placement: %f\n", b->first);
         }
     }
     
     cout << "sfc search run time is : " << total_time_search << "us" << endl;
     cout << "sfc placement run time is : " << total_time_placement << "us" << endl;
-    cout << "hit ratio is : " << (double) hit_number / 100 << endl;
+    cout << "hit ratio is : " << (double) hit_number / 10 << endl;
     cout << "miss loss is : " << (double) miss_loss / miss_number << endl;
 
     return 0;
