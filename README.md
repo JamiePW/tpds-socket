@@ -1,7 +1,7 @@
 # tpds-socket  
 ### 2022-8-15  
-优化了octans代码的single_prediction函数，单次执行时间约200us，降低了约40%-50%，主要优化部分：  
-1、使用unordered_map提高了查找效率  
+优化了octans代码的single_prediction函数，单次执行时间比初版代码减少约97.5%，主要优化部分：  
+1、将绝大部分map，vector等高级数据结构改为数组等简单数据结构    
 2、去除了很多不必要的string和int的相互转换  
 
 ### 2022-8-14  
