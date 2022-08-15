@@ -19,8 +19,15 @@ using std::default_random_engine;
 
 using namespace std;
 
+const int NF_ROUTER = 0;
+const int AES_ENCRYPT = 1;
+const int FLOW_TRACKER = 2;
+const int FIREWALL = 3;
+
+const int CHAIN_LEN = 18;
+
 struct NF {
-    string nf;
+    int nf;
     int core;
 };
 
@@ -33,16 +40,16 @@ struct SFC {
     vector<NF> nfs;
 };
 
-unordered_map<string, int> _nf_metrics_local;
-unordered_map<string, int> _nf_metrics_remote;
-unordered_map<string, int> _solo_performance_local;
-unordered_map<string, int> _solo_performance_remote;
-unordered_map<string, vector<double>> _nf_prediction_parameters_local;
-unordered_map<string, vector<double>> _nf_prediction_parameters_remote;
-unordered_map<int, int> sfc_last_nf;
-unordered_map<int, int> instance_to_core;
+int _nf_metrics_local[4];
+int _nf_metrics_remote[4];
+int _solo_performance_local[4];
+int _solo_performance_remote[4];
+double _nf_prediction_parameters_local[4][3];
+double _nf_prediction_parameters_remote[4][3];
+int sfc_last_nf[20];
+int instance_to_core[20];
 
-vector<string> nfs;
+int nfs[CHAIN_LEN];
 
 double myMin (double a, double b, double c) {
     double result = a;
@@ -81,52 +88,35 @@ bool vecCpr(vector<int> a, vector<int> b) {
 }
 
 void initMap() {
-    _nf_metrics_local["nf_router"] = 94;
-    _nf_metrics_local["aes_encrypt"] = 2000;  //487
-    _nf_metrics_local["flow_tracker"] = 266;
-    _nf_metrics_local["firewall"] = 194;
+    _nf_metrics_local[NF_ROUTER] = 94;
+    _nf_metrics_local[AES_ENCRYPT] = 2000;  //487
+    _nf_metrics_local[FLOW_TRACKER] = 266;
+    _nf_metrics_local[FIREWALL] = 194;
 
-    _nf_metrics_remote["nf_router"] = 481;
-    _nf_metrics_remote["aes_encrypt"] = 2000;  //884
-    _nf_metrics_remote["flow_tracker"] = 617;
-    _nf_metrics_remote["firewall"] = 576;
+    _nf_metrics_remote[NF_ROUTER] = 481;
+    _nf_metrics_remote[AES_ENCRYPT] = 2000;  //884
+    _nf_metrics_remote[FLOW_TRACKER] = 617;
+    _nf_metrics_remote[FIREWALL] = 576;
 
-    _solo_performance_local["nf_router"] = 14791582;
-    _solo_performance_local["aes_encrypt"] = 805120;
-    _solo_performance_local["flow_tracker"] = 5350967;
-    _solo_performance_local["firewall"] = 6783924;
+    _solo_performance_local[NF_ROUTER] = 14791582;
+    _solo_performance_local[AES_ENCRYPT] = 805120;
+    _solo_performance_local[FLOW_TRACKER] = 5350967;
+    _solo_performance_local[FIREWALL] = 6783924;
 
-    _solo_performance_remote["nf_router"] = 5169204;
-    _solo_performance_remote["aes_encrypt"] = 825056;
-    _solo_performance_remote["flow_tracker"] = 3520384;
-    _solo_performance_remote["firewall"] = 3829262;
+    _solo_performance_remote[NF_ROUTER] = 5169204;
+    _solo_performance_remote[AES_ENCRYPT] = 825056;
+    _solo_performance_remote[FLOW_TRACKER] = 3520384;
+    _solo_performance_remote[FIREWALL] = 3829262;
 
-    vector<double> myVector;
-    myVector.push_back(7.264703); myVector.push_back(-3.220732); myVector.push_back(0.280372);
-    _nf_prediction_parameters_local["nf_router"] = myVector;
-    myVector.clear();
-    myVector.push_back(2.194409); myVector.push_back(-2.501355); myVector.push_back(0.090523);
-    _nf_prediction_parameters_local["aes_encrypt"] = myVector;
-    myVector.clear();
-    myVector.push_back(6.978917); myVector.push_back(0.916245); myVector.push_back(0.072959);
-    _nf_prediction_parameters_local["flow_tracker"] = myVector;
-    myVector.clear();
-    myVector.push_back(5.529852); myVector.push_back(0.298462); myVector.push_back(0.208711);
-    _nf_prediction_parameters_local["firewall"] = myVector;
-    myVector.clear();
+    _nf_prediction_parameters_local[NF_ROUTER][0] = 7.264703; _nf_prediction_parameters_local[NF_ROUTER][1] = -3.220732; _nf_prediction_parameters_local[NF_ROUTER][2] = 0.280372;
+    _nf_prediction_parameters_local[AES_ENCRYPT][0] = 2.194409; _nf_prediction_parameters_local[AES_ENCRYPT][1] = -2.501355; _nf_prediction_parameters_local[AES_ENCRYPT][2] = 0.090523;
+    _nf_prediction_parameters_local[FLOW_TRACKER][0] = 6.978917; _nf_prediction_parameters_local[FLOW_TRACKER][1] = 0.916245; _nf_prediction_parameters_local[FLOW_TRACKER][2] = 0.072959;
+    _nf_prediction_parameters_local[FIREWALL][0] = 5.529852; _nf_prediction_parameters_local[FIREWALL][1] = 0.298462; _nf_prediction_parameters_local[FIREWALL][2] = 0.208711;
 
-    myVector.push_back(0.019525); myVector.push_back(3.504447); myVector.push_back(0.019525);
-    _nf_prediction_parameters_remote["nf_router"] = myVector;
-    myVector.clear();
-    myVector.push_back(0.066159); myVector.push_back(-8.151804); myVector.push_back(0.066159);
-    _nf_prediction_parameters_remote["aes_encrypt"] = myVector;
-    myVector.clear();
-    myVector.push_back(0.038925); myVector.push_back(16.161206); myVector.push_back(0.038925);
-    _nf_prediction_parameters_remote["flow_tracker"] = myVector;
-    myVector.clear();
-    myVector.push_back(0.068971); myVector.push_back(8.947197); myVector.push_back(0.068971);
-    _nf_prediction_parameters_remote["firewall"] = myVector;
-    myVector.clear();
+    _nf_prediction_parameters_remote[NF_ROUTER][0] = 0.019525; _nf_prediction_parameters_remote[NF_ROUTER][1] = 3.504447; _nf_prediction_parameters_remote[NF_ROUTER][2] = 0.019525;
+    _nf_prediction_parameters_remote[AES_ENCRYPT][0] = 0.066159; _nf_prediction_parameters_remote[AES_ENCRYPT][1] = -8.151804; _nf_prediction_parameters_remote[AES_ENCRYPT][2] = 0.066159;
+    _nf_prediction_parameters_remote[FLOW_TRACKER][0] = 0.038925; _nf_prediction_parameters_remote[FLOW_TRACKER][1] = 16.161206; _nf_prediction_parameters_remote[FLOW_TRACKER][2] = 0.038925;
+    _nf_prediction_parameters_remote[FIREWALL][0] = 0.068971; _nf_prediction_parameters_remote[FIREWALL][1] = 8.947197; _nf_prediction_parameters_remote[FIREWALL][2] = 0.068971;
 
     sfc_last_nf[1] = 0;
     sfc_last_nf[2] = 1;
@@ -151,7 +141,7 @@ void initMap() {
 }
 
 //prediction model for single NF
-double prediction (string nf, double cache, double memory, bool local1, bool local2) {
+double prediction (int nf, double cache, double memory, bool local1, bool local2) {
     double predict_tmp;
 
     if (local1 == true && local2 == true) {
@@ -172,19 +162,19 @@ double prediction (string nf, double cache, double memory, bool local1, bool loc
 //function for single prediction
 vector<double> single_prediction (vector<int> nf_distribution) {
     vector<double> nf_result;
-    vector<int> local_nf;
-    unordered_map<int, bool> local_map;
-    vector<int> remote_nf;
-    unordered_map<int, bool> remote_map;
+    int local_nf[CHAIN_LEN];
+    int remote_nf[CHAIN_LEN];
+    int local_len = 0;
+    int remote_len = 0;
 
     for (int s=0;s<nf_distribution.size();s++) {
         instance_to_core[s+1] = nf_distribution[s];
         if (nf_distribution[s] == 0) {
-            local_nf.push_back(s+1);
-            local_map[s+1] = true;
+            local_nf[local_len] = s+1;
+            local_len += 1;
         } else {
-            remote_nf.push_back(s+1);
-            remote_map[s+1] = true;
+            remote_nf[remote_len] = s+1;
+            remote_len += 1;
         }
     }
 
@@ -193,15 +183,15 @@ vector<double> single_prediction (vector<int> nf_distribution) {
             double cache_local_tmp = 0;
             double memory_local_tmp = 0;
 
-            for (vector<int>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
-                if (local_map.find(sfc_last_nf[*it]) == local_map.end()) { //sfc_last_nf[*it] not in local_nf
-                    cache_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
-                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
+            for (int i=0;i<local_len;i++) {
+                if (nf_distribution[sfc_last_nf[local_nf[i]] - 1] != 0 || sfc_last_nf[local_nf[i]] - 1 < 0) { //sfc_last_nf[*it] not in local_nf
+                    cache_local_tmp += (double) 1 / _nf_metrics_local[nfs[local_nf[i] - 1]];
+                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[local_nf[i] - 1]];
                 }
             }
-            for (vector<int>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
-                if (remote_map.find(sfc_last_nf[*it]) == remote_map.end()) {  //sfc_last_nf[*it] not in remote_nf
-                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
+            for (int i=0;i<remote_len;i++) {
+                if (nf_distribution[sfc_last_nf[remote_nf[i]] - 1] == 0 || sfc_last_nf[remote_nf[i]] - 1 < 0) {  //sfc_last_nf[*it] not in remote_nf
+                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[remote_nf[i] - 1]];
                 }
             }
             nf_result.push_back(prediction(nfs[t], cache_local_tmp, memory_local_tmp, true, true));
@@ -209,14 +199,14 @@ vector<double> single_prediction (vector<int> nf_distribution) {
             double cache_local_tmp = 1;
             double memory_local_tmp = 0;
 
-            for (vector<int>::iterator it = local_nf.begin(); it != local_nf.end(); it++) {
-                if (local_map.find(sfc_last_nf[*it]) == local_map.end()) { //sfc_last_nf[*it] not in local_nf
-                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
+            for (int i=0;i<local_len;i++) {
+                if (nf_distribution[sfc_last_nf[local_nf[i]] - 1] != 0 || sfc_last_nf[local_nf[i]] - 1 < 0) { //sfc_last_nf[*it] not in local_nf
+                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[local_nf[i] - 1]];
                 }
             }
-            for (vector<int>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
-                if (remote_map.find(sfc_last_nf[*it]) == remote_map.end()) {  //sfc_last_nf[*it] not in remote_nf
-                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[(*it)-1]];
+            for (int i=0;i<remote_len;i++) {
+                if (nf_distribution[sfc_last_nf[remote_nf[i]] - 1] == 0 || sfc_last_nf[remote_nf[i]] - 1 < 0) {  //sfc_last_nf[*it] not in remote_nf
+                    memory_local_tmp += (double) 1 / _nf_metrics_local[nfs[remote_nf[i] - 1]];
                 }
             }
             nf_result.push_back(prediction(nfs[t], cache_local_tmp, memory_local_tmp, false, true));
@@ -229,10 +219,10 @@ vector<double> single_prediction (vector<int> nf_distribution) {
                     memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[stoi(*it, nullptr, 10) - 1]];
                 }
             }*/
-            for (vector<int>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
-                if (remote_map.find(sfc_last_nf[*it]) == remote_map.end()) {  //sfc_last_nf[*it] not in remote_nf
-                    cache_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[(*it)-1]];
-                    memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[(*it)-1]];
+            for (int i=0;i<remote_len;i++) {
+                if (nf_distribution[sfc_last_nf[remote_nf[i]] - 1] == 0 || sfc_last_nf[remote_nf[i]] - 1 < 0) {  //sfc_last_nf[*it] not in remote_nf
+                    cache_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[remote_nf[i] - 1]];
+                    memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[remote_nf[i] - 1]];
                 }
             }
             nf_result.push_back(prediction(nfs[t], cache_remote_tmp, memory_remote_tmp, false, false));
@@ -245,9 +235,9 @@ vector<double> single_prediction (vector<int> nf_distribution) {
                     memory_remote_tmp += (double) 1 /  _nf_metrics_remote[nfs[stoi(*it, nullptr, 10) - 1]];
                 }
             }*/
-            for (vector<int>::iterator it = remote_nf.begin(); it != remote_nf.end(); it++) {
-                if (remote_map.find(sfc_last_nf[*it]) == remote_map.end()) {  //sfc_last_nf[*it] not in remote_nf
-                    memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[(*it)-1]];
+            for (int i=0;i<remote_len;i++) {
+                if (nf_distribution[sfc_last_nf[remote_nf[i]] - 1] == 0 || sfc_last_nf[remote_nf[i]] - 1 < 0) {  //sfc_last_nf[*it] not in remote_nf
+                    memory_remote_tmp += (double) 1 / _nf_metrics_remote[nfs[remote_nf[i] - 1]];
                 }
             }
             nf_result.push_back(prediction(nfs[t], cache_remote_tmp, memory_remote_tmp, true, false));
@@ -347,7 +337,7 @@ void multi_prediction (vector<SFC> sfcs, int server[], vector<int> nf_distributi
 }
 
 //heuristic placement algorithm
-map<double, vector<int>> prediction_search (vector<string> nfs) {
+map<double, vector<int>> prediction_search (int nfs[]) {
     timeval start1, start2, end;
     gettimeofday(&start1, NULL);
 
@@ -370,31 +360,6 @@ map<double, vector<int>> prediction_search (vector<string> nfs) {
         memset(&nf_tmp, 0 ,sizeof(NF));
         nf_tmp.nf = nfs[i];
         nf_tmp.core = 0;
-        /*if (i >= 0 && i < 3) {
-            sfcs[0].current = 0;
-            sfcs[0].last = 2;
-            sfcs[0].nfs.push_back(nf_tmp);
-        } else if (i >= 3 && i < 6) {
-            sfcs[1].current = 3;
-            sfcs[1].last = 5;
-            sfcs[1].nfs.push_back(nf_tmp);
-        } else if (i >= 6 && i < 9) {
-            sfcs[2].current = 6;
-            sfcs[2].last = 8;
-            sfcs[2].nfs.push_back(nf_tmp);
-        } else if (i >= 9 && i < 12) {
-            sfcs[3].current = 9;
-            sfcs[3].last = 11;
-            sfcs[3].nfs.push_back(nf_tmp);
-        } else if (i >= 12 && i < 15) {
-            sfcs[4].current = 12;
-            sfcs[4].last = 14;
-            sfcs[4].nfs.push_back(nf_tmp);
-        } else if (i >= 15 && i < 18) {
-            sfcs[5].current = 15;
-            sfcs[5].last = 17;
-            sfcs[5].nfs.push_back(nf_tmp);
-        }*/
         sfcs[i / 3].current = 3 * (i / 3);
         sfcs[i / 3].last = 3 * (i / 3) + 2;
         sfcs[i / 3].nfs.push_back(nf_tmp);
@@ -406,7 +371,7 @@ map<double, vector<int>> prediction_search (vector<string> nfs) {
     server[1] = 11;
     int node_number = 2;
 
-    int nf_number = nfs.size();
+    int nf_number = CHAIN_LEN;
     int sfc_number = sfcs.size();
     int sfc_choice = myPow(node_number, sfc_number);
 
@@ -470,7 +435,7 @@ map<double, vector<int>> prediction_search (vector<string> nfs) {
 }
 
 //greedy placement algorithm
-map<double, vector<int>> prediction_placement (vector<string> nfs) {
+map<double, vector<int>> prediction_placement (int nfs[]) {
     timeval start1, start2, end, end2;
     gettimeofday(&start1, NULL);
 
@@ -478,7 +443,7 @@ map<double, vector<int>> prediction_placement (vector<string> nfs) {
     server[0] = 11;
     server[1] = 11;
     int node_number = 2;
-    int nf_number = nfs.size();
+    int nf_number = CHAIN_LEN;
     int nf_choice = myPow(node_number, nf_number);
     vector<int> distribution;
     distribution.insert(distribution.begin(), nf_number, 0);
@@ -530,7 +495,6 @@ map<double, vector<int>> prediction_placement (vector<string> nfs) {
 int main() {
     initMap();
 
-    string nf_set[4] = {"nf_router", "firewall", "flow_tracker", "aes_encrypt"};
     int total_time_search = 0;
     long long total_time_placement = 0;
     int hit_number = 0;
@@ -541,11 +505,11 @@ int main() {
     random_device rd;
     default_random_engine random(rd());
 
-    for (int i=0;i<10;i++) {
+    for (int i=0;i<100;i++) {
         map<double, vector<int>>::iterator a, b;
-        nfs.clear();
-        for (int j=0;j<18;j++) {
-            nfs.push_back(nf_set[random() % 4]);
+        //nfs.clear();
+        for (int j=0;j<CHAIN_LEN;j++) {
+            nfs[j] = random() % 4;
         }
         gettimeofday(&start, NULL);
         map<double, vector<int>> result_search = prediction_search(nfs);
@@ -571,7 +535,7 @@ int main() {
     
     cout << "sfc search run time is : " << total_time_search << "us" << endl;
     cout << "sfc placement run time is : " << total_time_placement << "us" << endl;
-    cout << "hit ratio is : " << (double) hit_number / 10 << endl;
+    cout << "hit ratio is : " << (double) hit_number / 100 << endl;
     cout << "miss loss is : " << (double) miss_loss / miss_number << endl;
 
     return 0;
