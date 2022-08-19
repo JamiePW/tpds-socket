@@ -50,7 +50,7 @@ struct Key {  //messageType[2]
 
 struct Object {  //messageType[3]
     char type[16];
-    char content[2049];
+    char content[1030];
 };
 
 struct Update {  //messageType[4]

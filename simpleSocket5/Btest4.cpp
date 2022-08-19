@@ -27,16 +27,16 @@ int main() {
     size = read(socket_fd, buffer, sizeof(buffer));
     Update update;
     memcpy(&update, buffer, sizeof(buffer));
-    cout << update.type << endl;
-    cout << update.content << endl;
+    //cout << update.type << endl;
+    //cout << update.content << endl;
 
     //write(socket_fd, "confirm!", sizeof("confirm!"));
 
     //receive notification from A
     size = read(socket_fd, buffer, sizeof(buffer));
     memcpy(&update, buffer, sizeof(buffer));
-    cout << update.type << endl;
-    cout << update.content << endl;
+    //cout << update.type << endl;
+    //cout << update.content << endl;
 
     //send request to A again
     _sendMessage2(socket_fd, messageType[0], target, NULL, NULL);

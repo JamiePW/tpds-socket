@@ -46,7 +46,7 @@ int main() {
         close(socket_fd2);
 
         myMap[keyrequest.target] = object.content;
-        cout << myMap[keyrequest.target] << endl;
+        //cout << myMap[keyrequest.target] << endl;
     }
 
     //send notification to B
@@ -62,7 +62,7 @@ int main() {
     if (myMap.find(keyrequest.target) != myMap.end()) {
         //send object to B
         strcpy(stateBuffer, myMap[keyrequest.target].c_str());
-        _sendMessage2(fd, messageType[3], object.content, NULL, NULL);
+        _sendMessage2(fd, messageType[3], stateBuffer, NULL, NULL);
     }
 
     close(fd);
