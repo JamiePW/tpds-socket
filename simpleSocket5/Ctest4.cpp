@@ -5,24 +5,31 @@
 
 using namespace std;
 
+map<string, string> myMap;
+
 int main() {
     char buffer[2049];
     int size;
     string tmp = strRand(1024);
+    myMap["3f39d5c348e5b79d06e842c114e6cc571583bbf44e4b0ebfda1a01ec05745d43"] = tmp;
     char object[1025];
-    strcpy(object, tmp.c_str());
 
     int socket_fd = _bindSock(localAddr, 10040);
     if (socket_fd == -1) exit(-1);
 
     int fd = _listenSock(socket_fd);
 
-    //receive object request from A
+    //receive key request from A
+    KeyRequest keyrequest;
     size = read(fd, buffer, sizeof(buffer));
-    cout << buffer << endl;
+    memcpy(&keyrequest, buffer, sizeof(buffer));
+    //cout << keyrequest.target << endl;
 
-    //send object to A
-    _sendMessage2(fd, messageType[3], object, NULL, NULL);
+    if (myMap.find(keyrequest.target) != myMap.end()) {
+        //send object to A
+        strcpy(object, myMap[keyrequest.target].c_str());
+        _sendMessage2(fd, messageType[3], object, NULL, NULL);
+    }
 
     close(fd);
     close(socket_fd);

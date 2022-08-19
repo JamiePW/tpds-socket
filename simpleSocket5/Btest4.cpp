@@ -17,7 +17,7 @@ int main() {
     gettimeofday(&start, NULL);
 
     //connect to A
-    int socket_fd = _connectSock(localAddr, 10039);
+    int socket_fd = _connectSock(localAddr, 10030);
     if (socket_fd == -1) exit(-1);
 
     //send request to A
@@ -30,7 +30,7 @@ int main() {
     cout << update.type << endl;
     cout << update.content << endl;
 
-    write(socket_fd, "confirm!", sizeof("confirm!"));
+    //write(socket_fd, "confirm!", sizeof("confirm!"));
 
     //receive notification from A
     size = read(socket_fd, buffer, sizeof(buffer));

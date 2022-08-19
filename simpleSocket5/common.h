@@ -83,7 +83,7 @@ struct Addr {
     int port;
 };
 
-char localAddr[16] = "10.0.2.15";
+char localAddr[16] = "202.112.237.64";
 
 char messageType[10][16] = {
     "keyrequest",
