@@ -25,7 +25,7 @@ const int FLOW_TRACKER = 2;
 const int FIREWALL = 3;
 
 const int SFC_NUMBER = 5;
-const int NEW_SFC = 2; //should be between 2 and 6
+const int NEW_SFC = 6; //should be between 2 and 6
 const int CHAIN_LEN = 12 + NEW_SFC;
 const int SFC_LEN[SFC_NUMBER] = {3, 3, 3, 3, NEW_SFC};
 
@@ -295,9 +295,9 @@ void multi_prediction (SFC sfcs[], int server[], int nf_distribution[], double n
     for (int k=0;k < SFC_NUMBER;k++) {
         if (sfcs[k].node_id != 0 && sfcs[k].bottleneck >= sfcs[k].current && sfcs[k].bottleneck < sfcs[k].last && (server[0] - node0_core) > (sfcs[k].bottleneck - sfcs[k].current)) {
             flag = 1;
-            for (int j=0;j<CHAIN_LEN;j++) {
+            /*for (int j=0;j<CHAIN_LEN;j++) {
                 distribution[j] = 0;
-            }
+            }*/
             for (int j=0;j<CHAIN_LEN;j++) {
                 distribution[j] = nf_distribution[j];
             }
@@ -481,7 +481,7 @@ map<double, int*> prediction_search (int nfs[]) {
 
 //exhaustive placement algorithm
 map<double, int*> prediction_placement (int nfs[]) {
-    //timeval start1, start2, end, end2;
+    timeval start1, start2, end, end2;
     //gettimeofday(&start1, NULL);
 
     int server[2];
@@ -491,8 +491,11 @@ map<double, int*> prediction_placement (int nfs[]) {
     int nf_number = CHAIN_LEN;
     int nf_choice = myPow(node_number, nf_number);
     int distribution[nf_number];
-    for (int i=0;i<nf_number;i++) {
+    for (int i=0;i<6;i++) {
         distribution[i] = 0;
+    }
+    for (int i=6;i<12;i++) {
+        distribution[i] = 1;
     }
     //print distribution
     double sfc_result = 0;
@@ -543,7 +546,7 @@ map<double, int*> prediction_placement (int nfs[]) {
 
 //greedy placement algorithm
 map<double, int*> greedy_placement(int nfs[]) {
-    //timeval start1, start2, end, end2;
+    timeval start1, start2, end, end2;
     //gettimeofday(&start1, NULL);
 
     int server[2];
@@ -553,8 +556,11 @@ map<double, int*> greedy_placement(int nfs[]) {
     int nf_number = CHAIN_LEN;
     int nf_choice = myPow(node_number, NEW_SFC);
     int distribution[nf_number];
-    for (int i=0;i<nf_number;i++) {
+    for (int i=0;i<6;i++) {
         distribution[i] = 0;
+    }
+    for (int i=6;i<12;i++) {
+        distribution[i] = 1;
     }
     //print distribution
     double sfc_result = 0;
@@ -567,15 +573,22 @@ map<double, int*> greedy_placement(int nfs[]) {
 
     for (int i=0;i<nf_choice;i++) {
         int iShadow = i;
-        for (int j=0;j<nf_number;j++) {
+        for (int j=12;j<nf_number;j++) {
             distribution[j] = iShadow % node_number;
             iShadow = iShadow / node_number;
             if (distribution[j] != 0) {
                 distribution[j] = 1;
             }
         }
+        /*for (int j=0;j<nf_number;j++) {
+            printf("%d ", distribution[j]);
+        } printf("\n");*/
         if ((nf_number - mySum(distribution)) < server[0] && mySum(distribution) < server[1]) {
+            //gettimeofday(&start2, NULL);
             double *nf_result = single_prediction(distribution);
+            //gettimeofday(&end2, NULL);
+            //cout << "single_prediction time: " << ((end2.tv_usec - start2.tv_usec) + (end2.tv_sec - start2.tv_sec) * 1000000)  << "us" << endl;
+
             double result_tmp = myMin2(nf_result, 0, 3) + myMin2(nf_result, 3, 6) + myMin2(nf_result, 6, 9) + myMin2(nf_result, 9, 12) + myMin2(nf_result, 12, 12+NEW_SFC);
             if (sfc_result < result_tmp) {
                 //printf("sfc_result: %f, result_tmp: %f\n", sfc_result, result_tmp);
